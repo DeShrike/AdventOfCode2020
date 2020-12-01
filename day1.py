@@ -37,9 +37,10 @@ def PartA():
 	StartPartA()
 
 	answer = None
-	for a, b in itertools.product(inputdata, inputdata):
-		if int(a) + int(b) == 2020:
-			answer = int(a) * int(b)
+	numbers = [int(line) for line in inputdata]
+	for a, b in itertools.product(numbers, numbers):
+		if a + b == 2020:
+			answer = a * b
 			break
 
 	ShowAnswer(answer)
@@ -51,9 +52,10 @@ def PartB():
 	StartPartB()
 
 	answer = None
-	for a, b, c in itertools.product(inputdata, inputdata, inputdata):
-		if int(a) + int(b) + int(c) == 2020:
-			answer = int(a) * int(b) * int(c)
+	numbers = [int(line) for line in inputdata]
+	for a, b, c in itertools.product(numbers, numbers, numbers):
+		if a + b + c == 2020:
+			answer = a * b * c
 			break
 
 	ShowAnswer(answer)
