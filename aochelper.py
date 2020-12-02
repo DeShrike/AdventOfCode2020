@@ -11,9 +11,10 @@ inputdata = []
 
 ## Ansi Colors
 
-Reversed = u"\u001b[7m"
+Reversed =      u"\u001b[7m"
 DimBackground = u"\u001b[5m"
-Reset = u"\u001b[0m"
+Reset =         u"\u001b[0m"
+
 BrightBlack =   u"\u001b[30;1m"
 BrightRed =     u"\u001b[31;1m"
 BrightGreen =   u"\u001b[32;1m"
@@ -42,7 +43,7 @@ def StartDay(day):
 def ReadInput():
 	inputdata.clear()
 	if os.path.isfile(InputFilename()) == False:
-		print(f"File {InputFilename()} not found")
+		print(f"{BrightRed}File {InputFilename()} not found{Reset}")
 		return
 
 	file = open(InputFilename(), "r")
@@ -73,9 +74,9 @@ def ShowAnswer(result):
 ## Main
 
 if __name__ == "__main__":
-	StartDay(6)
-	print(InputFilename())
+	StartDay(999)
+	ReadInput()
 	StartPartA()
 	ShowAnswer(42)
 	StartPartB()
-	ShowAnswer("Hello")
+	ShowAnswer("Test")
