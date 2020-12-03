@@ -1,6 +1,4 @@
 from aochelper import *
-import math
-import re
 
 #########################################
 #########################################
@@ -33,8 +31,7 @@ def CountTrees(dx: int, dy: int):
 	x = y = 0
 	width = len(inputdata[0])
 	while y < len(inputdata):
-		if inputdata[y][x % width] == "#":
-			trees += 1
+		trees += 1 if inputdata[y][x % width] == "#" else 0
 		x += dx
 		y += dy
 
