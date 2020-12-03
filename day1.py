@@ -1,7 +1,5 @@
 from aochelper import *
 import itertools
-import math
-import re
 
 #########################################
 #########################################
@@ -12,16 +10,7 @@ import re
 #########################################
 #########################################
 
-def TestDataA():
-	inputdata.clear()
-	inputdata.append("1721")
-	inputdata.append("979")
-	inputdata.append("366")
-	inputdata.append("299")
-	inputdata.append("675")
-	inputdata.append("1456")	
-
-def TestDataB():
+def TestData():
 	inputdata.clear()
 	inputdata.append("1721")
 	inputdata.append("979")
@@ -66,9 +55,9 @@ def PartB():
 def Main():
 	StartDay(1)
 	ReadInput()
-	# TestDataA()
+	# TestData()
 	PartA()
-	# TestDataB()
+	# TestData()
 	PartB()
 	print("")
 

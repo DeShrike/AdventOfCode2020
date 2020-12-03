@@ -11,13 +11,7 @@ import re
 #########################################
 #########################################
 
-def TestDataA():
-	inputdata.clear()
-	inputdata.append("1-3 a: abcde")
-	inputdata.append("1-3 b: cdefg")
-	inputdata.append("2-9 c: ccccccccc")
-
-def TestDataB():
+def TestData():
 	inputdata.clear()
 	inputdata.append("1-3 a: abcde")
 	inputdata.append("1-3 b: cdefg")
@@ -84,9 +78,9 @@ def PartB():
 def Main():
 	StartDay(2)
 	ReadInput()
-	# TestDataA()
+	# TestData()
 	PartA()
-	# TestDataB()
+	# TestData()
 	PartB()
 	print("")
 
