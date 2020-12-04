@@ -42,6 +42,7 @@ def CountTrees(dx: int, dy: int):
 
 def PartA():
 	StartPartA()
+	# TestData()
 
 	trees = CountTrees(3, 1)
 
@@ -52,6 +53,7 @@ def PartA():
 
 def PartB():
 	StartPartB()
+	# TestData()
 
 	slopes = [ (1, 1), (3, 1), (5, 1), (7, 1), (1, 2) ]
 	product = 1
@@ -66,9 +68,7 @@ def PartB():
 def Main():
 	StartDay(3)
 	ReadInput()
-	# TestData()
 	PartA()
-	# TestData()
 	PartB()
 	print("")
 

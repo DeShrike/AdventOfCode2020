@@ -22,6 +22,7 @@ def TestDataB():
 
 def PartA():
 	StartPartA()
+	TestDataA()
 
 	ShowAnswer("?")
 
@@ -30,6 +31,7 @@ def PartA():
 
 def PartB():
 	StartPartB()
+	TestDataB()
 
 	ShowAnswer("?")
 
@@ -39,9 +41,7 @@ def PartB():
 def Main():
 	StartDay({DAY})
 	ReadInput()
-	TestDataA()
 	PartA()
-	TestDataB()
 	PartB()
 	print("")
 

@@ -43,6 +43,7 @@ def ParseInput():
 
 def PartA():
 	StartPartA()
+	# TestData()
 
 	ParseInput()
 
@@ -59,6 +60,7 @@ def PartA():
 
 def PartB():
 	StartPartB()
+	# TestData()
 
 	ParseInput()
 
@@ -78,9 +80,7 @@ def PartB():
 def Main():
 	StartDay(2)
 	ReadInput()
-	# TestData()
 	PartA()
-	# TestData()
 	PartB()
 	print("")
 

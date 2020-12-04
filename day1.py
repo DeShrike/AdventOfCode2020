@@ -24,6 +24,7 @@ def TestData():
 
 def PartA():
 	StartPartA()
+	# TestData()
 
 	answer = None
 	numbers = [int(line) for line in inputdata]
@@ -39,6 +40,7 @@ def PartA():
 
 def PartB():
 	StartPartB()
+	# TestData()
 
 	answer = None
 	numbers = [int(line) for line in inputdata]
@@ -55,9 +57,7 @@ def PartB():
 def Main():
 	StartDay(1)
 	ReadInput()
-	# TestData()
 	PartA()
-	# TestData()
 	PartB()
 	print("")
 
