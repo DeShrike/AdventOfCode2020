@@ -11,7 +11,7 @@ if test -f "day${DAY}.py"; then
    git add day${DAY}.py
 fi
 
-if test -f "day${DAY}.py"; then
+if test -f "input-day${DAY}.txt"; then
    git add input-day${DAY}.txt
 fi
 
