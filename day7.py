@@ -25,6 +25,13 @@ def TestDataA():
 
 def TestDataB():
 	inputdata.clear()
+	inputdata.append("shiny gold bags contain 2 dark red bags.")
+	inputdata.append("dark red bags contain 2 dark orange bags.")
+	inputdata.append("dark orange bags contain 2 dark yellow bags.")
+	inputdata.append("dark yellow bags contain 2 dark green bags.")
+	inputdata.append("dark green bags contain 2 dark blue bags.")
+	inputdata.append("dark blue bags contain 2 dark violet bags.")
+	inputdata.append("dark violet bags contain no other bags.")
 
 #########################################
 #########################################
@@ -46,6 +53,7 @@ def ParseData():
 		else:
 			print("BAD: ", line)
 			continue
+
 		for s in parts[1:]:
 			if s != ", no other bags":
 				match = rx1.search(s)
@@ -55,71 +63,11 @@ def ParseData():
 
 					rules[base].append((c, b))
 
-	for r in rules:
-		print(r, rules[r])
-		print("")
+	# for r in rules:
+	#	print(r, rules[r])
+	#	print("")
 
 	return rules
-
-class Bag():
-	def __init__(self, name, count):
-		self.parents = []
-		self.children = []
-		self.name = name
-		self.count = count
-
-	def Find(self, name):
-		if self.name == name:
-			return self
-		for c in self.children:
-			found = c.Find(name)
-			if found is not None:
-				return found
-		return None
-
-	def __str__(self):
-		s = f"'{self.name}' x {self.count}"
-		for p in self.parents:
-			s += "\n -> " + str(p)
-		return s
-
-class Tree():
-	def __init__(self):
-		self.heads = []
-
-	def Add(self, parent, name, count):
-		p = self.Find(parent)
-		if p is None:
-			p = Bag(name, 0)
-			self.heads.append(p)
-		c = self.Find(name)
-		if c is None:
-			c = Bag(name, count)
-		p.children.append(c)
-		c.parents.append(p)
-
-	def Find(self, name):
-		for h in self.heads:
-			found = h.Find(name)
-			if found is not None:
-				return found
-		return None
-
-	def __str__(self):
-		s = ""
-		for h in self.heads:
-			s += str(h) + "\n"
-		return s
-
-def BuildTree(rules):
-	tree = Tree()
-
-	for rule in rules:
-		for r in rules[rule]:
-			print("Add", rule, r[1], r[0])
-			tree.Add(rule, r[1], r[0]) 
-
-	return tree
 
 #########################################
 #########################################
@@ -129,8 +77,6 @@ def PartA():
 	# TestDataA()
 	
 	rules = ParseData()
-	# tree = BuildTree(rules)
-	# print(tree)
 	mybag = "shiny gold"
 
 	bags = []
@@ -142,7 +88,7 @@ def PartA():
 				if r not in colors:
 					colors.append(r)
 
-	print(colors)
+	# print(colors)
 
 	while len(colors) > 0:
 		current = colors.pop()
@@ -154,20 +100,35 @@ def PartA():
 				if c[1] == current:
 					if r not in colors:
 						colors.append(r)
-		print(colors)
+		# print(colors)
 
-	print("Bags", bags)
+	# print("Bags", bags)
 
 	ShowAnswer(len(bags))
 
 #########################################
 #########################################
 
+def CountSubBags(rules, name):
+	bags = rules[name]
+	c = 1
+	for bag in bags:
+		if bag[1] in rules:
+			c += bag[0] * CountSubBags(rules, bag[1])
+	
+	return c
+
 def PartB():
 	StartPartB()
-	TestDataB()
+	# TestDataA()
+	# TestDataB()
 
-	ShowAnswer("?")
+	rules = ParseData()
+	mybag = "shiny gold"
+
+	count = CountSubBags(rules, mybag) - 1
+
+	ShowAnswer(count)
 
 #########################################
 #########################################
