@@ -11,7 +11,7 @@ import re
 #########################################
 #########################################
 
-def TestDataA():
+def TestData():
 	inputdata.clear()
 	inputdata.append("nop +0")
 	inputdata.append("acc +1")
@@ -23,9 +23,6 @@ def TestDataA():
 	inputdata.append("jmp -4")
 	inputdata.append("acc +6")
 
-def TestDataB():
-	inputdata.clear()
-
 #########################################
 #########################################
 
@@ -33,29 +30,38 @@ def BuildInstructions():
 	instructions = [ [ line.split(" ")[0], int(line.split(" ")[1]), False ] for line in inputdata]
 	return instructions
 
+def Run(program):
+	accumulator = 0
+	ip = 0
+	loop = False
+	while True:
+		if ip >= len(program):
+			break
+		if program[ip][2]:
+			loop = True
+			break
+		program[ip][2] = True
+		if program[ip][0] == "nop":
+			ip += 1
+		elif program[ip][0] == "acc":
+			accumulator += program[ip][1]
+			ip += 1
+		elif program[ip][0] == "jmp":
+			ip += program[ip][1]
+		else:
+			print("Unknown instruction: ", program[ip][0])
+
+	return (accumulator, loop)
+
 #########################################
 #########################################
 
 def PartA():
 	StartPartA()
-	# TestDataA()
+	# TestData()
 
 	instructions = BuildInstructions()
-	accumulator = 0
-	ip = 0
-	while True:
-		if instructions[ip][2]:
-			break
-		instructions[ip][2] = True
-		if instructions[ip][0] == "nop":
-			ip += 1
-		elif instructions[ip][0] == "acc":
-			accumulator += instructions[ip][1]
-			ip += 1
-		elif instructions[ip][0] == "jmp":
-			ip += instructions[ip][1]
-		else:
-			print("Unknown instruction: ", instructions[ip][0])
+	accumulator, _ = Run(instructions)
 
 	ShowAnswer(accumulator)
 
@@ -64,9 +70,25 @@ def PartA():
 
 def PartB():
 	StartPartB()
-	TestDataB()
+	# TestData()
 
-	ShowAnswer("?")
+	# Brute forcing it
+	accumulator = 0
+	ix = 0
+	while True:
+		instructions = BuildInstructions()
+		while instructions[ix][0] != "nop" and instructions[ix][0] != "jmp":
+			ix += 1
+		if instructions[ix][0] == "nop":
+			instructions[ix][0] = "jmp"
+		else:
+			instructions[ix][0] = "nop"
+		ix += 1
+		accumulator, loop = Run(instructions)
+		if loop == False:
+			break
+
+	ShowAnswer(accumulator)
 
 #########################################
 #########################################
