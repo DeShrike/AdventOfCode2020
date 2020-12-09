@@ -58,7 +58,7 @@ AnswerA = None
 def PartA():
 	global AnswerA
 	StartPartA()
-	TestData()
+	# TestData()
 
 	numbers = [int(line) for line in inputdata]
 	AnswerA = None
@@ -76,20 +76,24 @@ def PartA():
 
 def PartB():
 	StartPartB()
-	TestData()
+	# TestData()
 
 	answer = None
 	numbers = [int(line) for line in inputdata]
 	for ix in range(len(numbers)):
 		sum = 0
 		ix2 = ix
-		while sum <= AnswerA:
+		while sum < AnswerA:
 			sum += numbers[ix2]
 			ix2 += 1
 		if sum == AnswerA:
-			answer = numbers[ix] + numbers[ix2 - 1]
+			validrange = numbers[ix:ix2]
+			answer = min(validrange) + max(validrange)
+			print(validrange)
 			break
 
+	# Attempt 1: 52595509 Too Low
+	
 	ShowAnswer(answer)
 
 #########################################
