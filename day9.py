@@ -53,20 +53,23 @@ def SumExists(num, numbers):
 #########################################
 #########################################
 
+AnswerA = None
+
 def PartA():
+	global AnswerA
 	StartPartA()
-	# TestData()
+	TestData()
 
 	numbers = [int(line) for line in inputdata]
-	answer = None
+	AnswerA = None
 
 	for ix in range(preamble, len(numbers)):
 		validrange = numbers[ix - preamble:ix]
 		if SumExists(numbers[ix], validrange) == False:
-			answer = numbers[ix]
+			AnswerA = numbers[ix]
 			break
 
-	ShowAnswer(answer)
+	ShowAnswer(AnswerA)
 
 #########################################
 #########################################
@@ -75,7 +78,19 @@ def PartB():
 	StartPartB()
 	TestData()
 
-	ShowAnswer("?")
+	answer = None
+	numbers = [int(line) for line in inputdata]
+	for ix in range(len(numbers)):
+		sum = 0
+		ix2 = ix
+		while sum <= AnswerA:
+			sum += numbers[ix2]
+			ix2 += 1
+		if sum == AnswerA:
+			answer = numbers[ix] + numbers[ix2 - 1]
+			break
+
+	ShowAnswer(answer)
 
 #########################################
 #########################################
