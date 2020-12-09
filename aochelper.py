@@ -8,6 +8,8 @@ import os
 _day = 0
 _start = 0
 inputdata = []
+AnswerA = None
+AnswerB = None
 
 ## Ansi Colors
 
@@ -67,9 +69,21 @@ def StartPartB():
 	_start = time.time()
 
 def ShowAnswer(result):
+	global AnswerA, AnswerB
+	if AnswerA == None:
+		AnswerA = result
+	else:
+		AnswerB = result
+
 	end = time.time()
 	ellapsed = end - _start
 	print(f"Answer: {BrightGreen}{result}{Reset} | Took {BrightMagenta}{ellapsed:.5f}{Reset} seconds")
+
+def GetAnswerA():
+	return AnswerA
+
+def GetAnswerB():
+	return AnswerB
 
 ## Main
 
