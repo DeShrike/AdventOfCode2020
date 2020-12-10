@@ -129,6 +129,7 @@ def PartB():
 
 	print(joltages)
 
+	"""
 	result = 1
 	i = 0
 	while i < len(joltages):
@@ -144,26 +145,26 @@ def PartB():
 		i += len(possibilities)
 
 	print(result)
-	
-	#orders = [[0]]
-	#addedSome = True
-	#while addedSome:
-	#	addedSome = False
-	#	oo = len(orders)
-	#	print(oo, end = "\r")
-	#	for ix in range(oo):
-	#		o = orders[ix]
-	#		possibilities = [x for x in joltages if o[-1] < x <= (o[-1] + 3)]
-	#		if len(possibilities) > 0:
-	#			addedSome = True
-	#			first = possibilities.pop()
-	#			for ix2 in possibilities:
-	#				newo = [ooo for ooo in o]
-	#				newo.append(ix2)
-	#				orders.append(newo)
-	#			o.append(first)
+	"""
+	orders = [[0]]
+	addedSome = True
+	while addedSome:
+		addedSome = False
+		oo = len(orders)
+		print(oo, end = "\r")
+		for ix in range(oo):
+			o = orders[ix]
+			possibilities = [x for x in joltages if o[-1] < x <= (o[-1] + 3)]
+			if len(possibilities) > 0:
+				addedSome = True
+				first = possibilities.pop()
+				for ix2 in possibilities:
+					newo = [ooo for ooo in o]
+					newo.append(ix2)
+					orders.append(newo)
+				o.append(first)
 
-	#ShowAnswer(len(orders))
+	ShowAnswer(len(orders))
 
 	# Attempt 1 : 274877906944 Too Low
 
