@@ -93,33 +93,11 @@ def PartA():
 
 #########################################
 #########################################
-"""
-(0), 1, 4, 5, 6, 7, 10, 11, 12, 15, 16, 19, (22)
-(0), 1, 4, 5, 6, 7, 10,     12, 15, 16, 19, (22)
-(0), 1, 4, 5,    7, 10, 11, 12, 15, 16, 19, (22)
-(0), 1, 4, 5,    7, 10,     12, 15, 16, 19, (22)
-(0), 1, 4,    6, 7, 10, 11, 12, 15, 16, 19, (22)
-(0), 1, 4,    6, 7, 10,     12, 15, 16, 19, (22)
-(0), 1, 4,       7, 10, 11, 12, 15, 16, 19, (22)
-(0), 1, 4,       7, 10,     12, 15, 16, 19, (22)
 
-
-
-(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31, 32, 33, 34, 35, 38, 39, 42, 45, 46, 47, 48, 49, (52)
-(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31, 32, 33, 34, 35, 38, 39, 42, 45, 46, 47,     49, (52)
-(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31, 32, 33, 34, 35, 38, 39, 42, 45, 46,     48, 49, (52)
-(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31, 32, 33, 34, 35, 38, 39, 42, 45, 46,         49, (52)
-(0), 1, 2, 3, 4, 7, 8, 9, 10, 11, 14, 17, 18, 19, 20, 23, 24, 25, 28, 31, 32, 33, 34, 35, 38, 39, 42, 45,     47, 48, 49, (52)
-(0),       3, 4, 7,       10, 11, 14, 17,         20, 23,     25, 28, 31,         34, 35, 38, 39, 42, 45, 46,     48, 49, (52)
-(0),       3, 4, 7,       10, 11, 14, 17,         20, 23,     25, 28, 31,         34, 35, 38, 39, 42, 45, 46,         49, (52)
-(0),       3, 4, 7,       10, 11, 14, 17,         20, 23,     25, 28, 31,         34, 35, 38, 39, 42, 45,     47, 48, 49, (52)
-(0),       3, 4, 7,       10, 11, 14, 17,         20, 23,     25, 28, 31,         34, 35, 38, 39, 42, 45,     47,     49, (52)
-(0),       3, 4, 7,       10, 11, 14, 17,         20, 23,     25, 28, 31,         34, 35, 38, 39, 42, 45,         48, 49, (52)
-"""
 def PartB():
 	StartPartB()
 	# TestData1()
-	TestData2()
+	# TestData2()
 
 	joltages = [int(line) for line in inputdata]
 	builtin = max(joltages) + 3
@@ -127,48 +105,24 @@ def PartB():
 	joltages.append(builtin)
 	joltages.sort()
 
-	print(joltages)
-
-	"""
 	result = 1
-	i = 0
-	while i < len(joltages):
-		num = joltages[i]
-		possibilities = [x for x in joltages if num < x <= (num + 3)]
-		if len(possibilities) == 0:
-			break
-		if len(possibilities) == 3:
+	ix = 0
+	while ix < len(joltages):
+		current = joltages[ix]
+		count = 1
+		while ix + count < len(joltages) and joltages[ix + count] == current + count:
+			count += 1
+		if count == 5:
+			result *= 7
+		if count == 4:
 			result *= 4
-		if len(possibilities) == 2:
+		if count == 3:
 			result *= 2
-		print(num, possibilities, result)
-		i += len(possibilities)
-
-	print(result)
-	"""
-	orders = [[0]]
-	addedSome = True
-	while addedSome:
-		addedSome = False
-		oo = len(orders)
-		print(oo, end = "\r")
-		for ix in range(oo):
-			o = orders[ix]
-			possibilities = [x for x in joltages if o[-1] < x <= (o[-1] + 3)]
-			if len(possibilities) > 0:
-				addedSome = True
-				first = possibilities.pop()
-				for ix2 in possibilities:
-					newo = [ooo for ooo in o]
-					newo.append(ix2)
-					orders.append(newo)
-				o.append(first)
-
-	ShowAnswer(len(orders))
+		ix += count
 
 	# Attempt 1 : 274877906944 Too Low
 
-	ShowAnswer("?")
+	ShowAnswer(result)
 
 #########################################
 #########################################
