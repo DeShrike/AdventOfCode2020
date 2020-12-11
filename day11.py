@@ -61,8 +61,6 @@ def CountNeighboursB(grid, x: int, y: int) -> int:
 			else:
 				break
 
-
-
 	return occupied
 
 def EvolveA(grid):
