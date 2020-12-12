@@ -93,12 +93,22 @@ def PartA():
 	StartPartA()
 	# TestData()
 
+	minx = 10000000000
+	maxx = -10000000000
+	miny = 10000000000
+	maxy = -10000000000
+	
 	x = y = f = 0
 	for instruction in inputdata:
 		x, y, f = ExecuteA(instruction, x, y, f)
-
+		minx = min(x,minx)
+		miny = min(y,miny)
+		maxx = max(x,maxx)
+		maxy = max(y,maxy)
 	answer = abs(x) + abs(y)
 
+	# print(f"Extent: X: {minx} to {maxx}, Y: {miny} to {maxy}")	
+	
 	# Attempt 1 : 1055 Too Low
 
 	ShowAnswer(answer)
@@ -110,13 +120,25 @@ def PartB():
 	StartPartB()
 	# TestData()
 
+	minx = 10000000000
+	maxx = -10000000000
+	miny = 10000000000
+	maxy = -10000000000
+
 	x = y = 0
 	wx = 10
 	wy = 1
 	for instruction in inputdata:
 		x, y, wx, wy = ExecuteB(instruction, x, y, wx, wy)
 		# print(f"({x}, {y})  WP: ({wx}, {wy})")
+		minx = min(x,minx)
+		miny = min(y,miny)
+		maxx = max(x,maxx)
+		maxy = max(y,maxy)
+
 	answer = abs(x) + abs(y)
+
+	# print(f"Extent: X: {minx} to {maxx}, Y: {miny} to {maxy}")	
 
 	# Attempt 1 : 53857 Too low
 
