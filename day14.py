@@ -1,4 +1,5 @@
 from aochelper import *
+import itertools
 import math
 import re
 
@@ -20,6 +21,11 @@ def TestDataA():
 
 def TestDataB():
 	inputdata.clear()
+	inputdata.append("inputdata.clear()")
+	inputdata.append("mask = 000000000000000000000000000000X1001X")
+	inputdata.append("mem[42] = 100")
+	inputdata.append("mask = 00000000000000000000000000000000X0XX")
+	inputdata.append("mem[26] = 1")
 
 #########################################
 #########################################
@@ -30,7 +36,9 @@ class Instruction():
 		self.mems = [] # List of (mem, value) tupples
 		self.m0 = int(self.mask.replace("X", "1"), 2)
 		self.m1 = int(self.mask.replace("X", "0"), 2)
-	
+		self.ixen = self.mask.count("X")
+		self.floating = [(36 - ix - 1) for ix, l in enumerate(mask) if l == "X"]
+
 	def add(self, mem, value):
 		self.mems.append( (mem, value) )
 	
@@ -38,20 +46,45 @@ class Instruction():
 		msg = f"mask = {self.mask}\n"
 		for mem in self.mems:
 			msg += f"mem[{mem[0]}] {mem[1]}\n"
+		msg += f"Floating: {self.ixen}: {self.floating}\n"
 		return msg
 
 	def SetMemory(self, memory, address, value):
 		memory[address] = value
 		
-	def ApplyMask(self, value):
+	def ApplyMaskA(self, value):
 		value = value | self.m1
 		value = value & self.m0
 		return value
 
-	def Execute(self, memory):
+	def ApplyMaskB(self, value):
+		value = value | self.m1
+		return value
+
+	def ModifyBit(self, n,  p,  b): 
+		m = 1 << p 
+		return (n & ~m) | ((b << p) & m) 
+
+	def MutateAddr(self, addr, mutation):
+		for value, bit in zip(mutation, self.floating):
+			# change bit {bit} to {value}
+			addr = self.ModifyBit(addr, bit, value)
+		return addr
+
+	def ExecuteA(self, memory):
 		for mem in self.mems:
-			value = self.ApplyMask(mem[1])
+			value = self.ApplyMaskA(mem[1])
 			self.SetMemory(memory, mem[0], value)
+
+	def ExecuteB(self, memory):
+		for mem in self.mems:
+			addr = mem[0]
+			value = mem[1]
+			addr = self.ApplyMaskB(addr)
+			for a in itertools.product([0, 1], repeat = self.ixen):
+				newaddr = self.MutateAddr(addr, a)
+				# print(f"Set [{newaddr}] to {value}")
+				self.SetMemory(memory, newaddr, value)
 
 def Parse():
 	instructions = []
@@ -82,13 +115,13 @@ def PartA():
 
 	memory = {}
 	instructions = Parse()
-	# print(instructions)
+
 	for instruction in instructions:
-		instruction.Execute(memory)
+		# print(instruction)
+		instruction.ExecuteA(memory)
 
 	som = 0
 	for k in memory:
-		# print(f"[{k}] = {memory[k]}")
 		som += memory[k]
 
 	ShowAnswer(som)
@@ -98,9 +131,20 @@ def PartA():
 
 def PartB():
 	StartPartB()
-	TestDataB()
+	# TestDataB()
 
-	ShowAnswer("?")
+	memory = {}
+	instructions = Parse()
+
+	for instruction in instructions:
+		# print(instruction)
+		instruction.ExecuteB(memory)
+
+	som = 0
+	for k in memory:
+		som += memory[k]
+
+	ShowAnswer(som)
 
 #########################################
 #########################################
