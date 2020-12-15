@@ -31,8 +31,8 @@ def Run(numbers, count):
 	# print(his)
 	last = numbers[-1]
 	for i in range(len(his) + 1, count + 1):
-		if i % 5000 == 0:
-			print(f"{i} =  {last}", end = "\r")
+		if i % 50000 == 0:
+			print(f"{i} =  {last} ", end = "\r")
 		if last not in his:
 			last = 0
 			his[last] = [i]	
@@ -43,14 +43,24 @@ def Run(numbers, count):
 				newnum = numhis[-1] - numhis[-2]
 				if newnum not in his:
 					his[newnum] = []	
-				his[newnum].append(i)
+
 				last = newnum
+				if len(his[last]) >= 2:
+					his[last][-2] = his[last][-1]
+					his[last][-1] = i
+				else:	
+					his[last].append(i)
+
 				# print(i, last)
 			else:
 				last = 0
 				if last not in his:
-					his[last] = []	
-				his[last].append(i)
+					his[last] = []
+				if len(his[last]) >= 2:
+					his[last][-2] = his[last][-1]
+					his[last][-1] = i
+				else:	
+					his[last].append(i)
 				# print(i, last)
 	return last
 
@@ -75,7 +85,7 @@ def PartB():
 	StartPartB()
 
 	numbers = [int(n) for n in inputdata[0].split(",")]
-	answer = 1 #Run(numbers, 30_000_000)
+	answer = Run(numbers, 30_000_000)
 
 	ShowAnswer(answer)
 
