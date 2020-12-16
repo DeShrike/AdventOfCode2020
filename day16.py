@@ -72,7 +72,9 @@ def Parse():
 	return rules, your, nearby
 
 def IsValidForRule(value, rule):
-	return rule[0][0] <= value <= rule[0][1] or rule[1][0] <= value <= rule[1][1]  
+	valid = rule[0][0] <= value <= rule[0][1] or rule[1][0] <= value <= rule[1][1]  
+	# print(f"Value: {value} : {rule} : {valid}")
+	return valid
 
 def IsValidAny(value, rules):
 	for rule in rules:
@@ -111,18 +113,66 @@ def PartB():
 
 	rules, your, nearby = Parse()
 
-	print(len(rules))
-
 	nearbyvalid = []
 	for near in nearby:
+		valid = True
 		for val in near:
-			if IsValidAny(val, rules):
-				nearbyvalid.append(near)
-				break
+			if IsValidAny(val, rules) == False:
+				valid = False
+		if valid:
+			nearbyvalid.append(near)
 
-	print(len(nearbyvalid))
+	# print(nearbyvalid)
 
-	ShowAnswer("?")
+	valid_col_per_field = {} # {field: [columnindex, columnindex, ...]}
+
+	for fix in range(len(nearbyvalid[0])):
+		for key in rules:
+			rule = rules[key]
+			validforallnearby = True
+			for near in nearbyvalid:
+				value = near[fix]
+				if IsValidForRule(value, rule) == False:
+					validforallnearby = False
+					break
+			if validforallnearby: 
+				if key not in valid_col_per_field:
+					valid_col_per_field[key] = []
+				valid_col_per_field[key].append(fix)
+
+	# print(valid_col_per_field)
+
+	done = []
+	while True:
+		one = None
+		value = None
+		for v in valid_col_per_field:
+			a = valid_col_per_field[v]
+			if len(a) == 1 and v not in done:
+				one = v
+				done.append(one)
+				value = a[0]
+
+		if one is None:
+			break
+
+		for v in valid_col_per_field:
+			if v != one:
+				a = valid_col_per_field[v]
+				if value in a:
+					a.remove(value)
+
+	# print("After clean:")
+	# print(valid_col_per_field)
+
+	answer = 1
+	for v in valid_col_per_field:
+		rule = valid_col_per_field[v]
+		if v[0:9] == "departure":
+			myvalue = your[rule[0]]
+			answer *= myvalue
+
+	ShowAnswer(answer)
 
 #########################################
 #########################################
@@ -139,3 +189,29 @@ def Main():
 
 if __name__ == "__main__":
 	Main()
+
+
+"""
+{
+'departure date': [0, 1, 3, 4, 8, 9, 10, 11, 12, 13, 17, 18, 19], 
+'arrival station': [0, 1, 2, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19], 
+'class': [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19], 
+'price': [0, 1, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 17, 18, 19], 
+'route': [0, 1, 3, 4, 6, 8, 9, 10, 11, 12, 13, 17, 18, 19], 
+'row': [0, 1, 3, 4, 6, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19], 
+'type': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19], 
+'zone': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 17, 18, 19], 
+'departure location': [1, 3, 4, 8, 9, 10, 11, 12, 13, 17, 18], 
+'departure station': [1, 3, 4, 8, 9, 10, 12, 13, 18], 
+'departure platform': [1, 3, 4, 9, 10, 12, 13, 18], 
+'departure track': [1, 3, 4, 8, 9, 10, 11, 12, 13, 18], 
+'departure time': [1, 3, 4, 8, 9, 10, 11, 12, 13, 17, 18, 19], 
+'arrival platform': [1, 3, 4, 9, 12, 13, 18], 
+'arrival track': [1, 3, 4, 12, 13, 18], 
+'arrival location': [3, 12, 13, 18], 
+'duration': [3, 4, 12, 13, 18], 
+'seat': [12, 18], 
+'wagon': [12, 13, 18], 
+'train': [18]
+}
+"""
