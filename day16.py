@@ -107,11 +107,11 @@ def PartA():
 
 def PartB():
 	StartPartB()
-	TestDataB()
+	# TestDataB()
 
 	rules, your, nearby = Parse()
 
-	print(rules)
+	print(len(rules))
 
 	nearbyvalid = []
 	for near in nearby:
@@ -120,7 +120,7 @@ def PartB():
 				nearbyvalid.append(near)
 				break
 
-	print(nearbyvalid)
+	print(len(nearbyvalid))
 
 	ShowAnswer("?")
 
