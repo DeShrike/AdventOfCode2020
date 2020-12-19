@@ -49,6 +49,9 @@ class Rule():
 		self.a3 = None
 		self.b1 = None
 		self.b2 = None
+		self.built = False
+
+		self.line = line
 
 		self.subrulesA = []
 		self.subrulesB = []
@@ -98,7 +101,21 @@ class Rule():
 
 		print("Error: No match: ", line)
 
+	def __str__(self):
+		msg = f"Rule #{self.id}\n"
+		msg += f"\"{self.line}\"\n"
+		if self.letter is not None:
+			msg += f"Letter: {self.letter}"
+		else:
+			msg += f"A1: {self.a1} A2: {self.a2} A3: {self.a3}\n"
+			msg += f"B1: {self.b1} B2: {self.b2}\n"
+			msg += f"len(subrulesA) = {len(self.subrulesA)}\n"
+			msg += f"len(subrulesB) = {len(self.subrulesB)}"
+		return msg
+
 	def BuildTree(self, rules):
+		if self.built:
+			return
 		if self.letter is not None:
 			return
 		if self.a1 is not None:
@@ -121,8 +138,11 @@ class Rule():
 			subrule = rules[self.b2]
 			subrule.BuildTree(rules)
 			self.subrulesB.append(subrule)
+		self.built = True
 
 	def Validate(self, message):
+		# print(f"Validate Rule {self.id} for '{message}'")
+
 		if self.letter is not None:
 			if message[0] == self.letter:
 				return True, 1
@@ -130,32 +150,33 @@ class Rule():
 
 		progresslength = 0
 		rule = self.subrulesA[0]
-		valid, l = rule.Validate(messages[progresslength:])
+		valid, l = rule.Validate(message[progresslength:])
 		if valid:
 			progresslength += l
 			if len(self.subrulesA) >= 2:
 				rule = self.subrulesA[1]
-				valid, l = rule.Validate(messages[progresslength:])
+				valid, l = rule.Validate(message[progresslength:])
 				if valid:
 					progresslength += l
 					if len(self.subrulesA) >= 3:
 						rule = self.subrulesA[2]
-						valid, l = rule.Validate(messages[progresslength:])
+						valid, l = rule.Validate(message[progresslength:])
 						if valid:
 							progresslength += l
 
 		if valid == False and len(self.subrulesB) > 0:
 			progresslength = 0
 			rule = self.subrulesB[0]
-			valid, l = rule.Validate(messages[progresslength:])
+			valid, l = rule.Validate(message[progresslength:])
 			if valid:
 				progresslength += l
 				if len(self.subrulesB) >= 2:
 					rule = self.subrulesB[1]
-					valid, l = rule.Validate(messages[progresslength:])
+					valid, l = rule.Validate(message[progresslength:])
 					if valid:
 						progresslength += l
 
+		# print(f"Rule {self.id}", valid, progresslength)
 		return valid, progresslength
 
 def Parse():
@@ -166,6 +187,7 @@ def Parse():
 	for line in inputdata:
 		if line == "":
 			inrules = False
+			continue
 		if inrules:
 			rule = Rule(line)
 			rules[rule.id] = rule
@@ -179,17 +201,26 @@ def Parse():
 
 def PartA():
 	StartPartA()
-	TestDataA()
+	# TestDataA()
 
 	rules, messages = Parse()
 	root = rules[0]
 	root.BuildTree(rules)
 
+	""""
+	for rule in rules:
+		print(rules[rule])
+		print("")
+
+	valid, _ = root.Validate(messages[0])
+	"""
 	answer = 0
 	for msg in messages:
-		valid, _ = root.Validate(msg)
-		if valid:
+		valid, l = root.Validate(msg)
+		if valid and l == len(msg):
 			answer += 1
+
+	# Attempt 1 : 165 Too high
 
 	ShowAnswer(answer)
 
