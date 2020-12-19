@@ -34,7 +34,7 @@ def TestDataB():
 
 class Rule():
 
-	rx1 = re.compile(f"(?P<id>[0-9]*): \"(?P<letter>[ab])\"")
+	rx1 = re.compile(f"(?P<id>[0-9]*): \"(?P<letter>[a-z])\"")
 	rx2 = re.compile(f"(?P<id>[0-9]*): (?P<a1>[0-9]*) (?P<a2>[0-9]*) \| (?P<b1>[0-9]*) (?P<b2>[0-9]*)")
 	rx3 = re.compile(f"(?P<id>[0-9]*): (?P<a1>[0-9]*) (?P<a2>[0-9]*) (?P<a3>[0-9]*)")
 	rx4 = re.compile(f"(?P<id>[0-9]*): (?P<a1>[0-9]*) (?P<a2>[0-9]*)")
@@ -49,6 +49,9 @@ class Rule():
 		self.a3 = None
 		self.b1 = None
 		self.b2 = None
+
+		self.subrulesA = []
+		self.subrulesB = []
 
 		match = self.rx1.match(line)
 		if match:
@@ -95,9 +98,69 @@ class Rule():
 
 		print("Error: No match: ", line)
 
+	def BuildTree(self, rules):
+		if self.letter is not None:
+			return
+		if self.a1 is not None:
+			subrule = rules[self.a1]
+			subrule.BuildTree(rules)
+			self.subrulesA.append(subrule)
+		if self.a2 is not None:
+			subrule = rules[self.a2]
+			subrule.BuildTree(rules)
+			self.subrulesA.append(subrule)
+		if self.a3 is not None:
+			subrule = rules[self.a3]
+			subrule.BuildTree(rules)
+			self.subrulesA.append(subrule)
+		if self.b1 is not None:
+			subrule = rules[self.b1]
+			subrule.BuildTree(rules)
+			self.subrulesB.append(subrule)
+		if self.b2 is not None:
+			subrule = rules[self.b2]
+			subrule.BuildTree(rules)
+			self.subrulesB.append(subrule)
+
+	def Validate(self, message):
+		if self.letter is not None:
+			if message[0] == self.letter:
+				return True, 1
+			return False, 0
+
+		progresslength = 0
+		rule = self.subrulesA[0]
+		valid, l = rule.Validate(messages[progresslength:])
+		if valid:
+			progresslength += l
+			if len(self.subrulesA) >= 2:
+				rule = self.subrulesA[1]
+				valid, l = rule.Validate(messages[progresslength:])
+				if valid:
+					progresslength += l
+					if len(self.subrulesA) >= 3:
+						rule = self.subrulesA[2]
+						valid, l = rule.Validate(messages[progresslength:])
+						if valid:
+							progresslength += l
+
+		if valid == False and len(self.subrulesB) > 0:
+			progresslength = 0
+			rule = self.subrulesB[0]
+			valid, l = rule.Validate(messages[progresslength:])
+			if valid:
+				progresslength += l
+				if len(self.subrulesB) >= 2:
+					rule = self.subrulesB[1]
+					valid, l = rule.Validate(messages[progresslength:])
+					if valid:
+						progresslength += l
+
+		return valid, progresslength
+
 def Parse():
 	messages = []
-	rules = []
+	rules = {}
 
 	inrules = True
 	for line in inputdata:
@@ -105,7 +168,7 @@ def Parse():
 			inrules = False
 		if inrules:
 			rule = Rule(line)
-			rules.append(rule)
+			rules[rule.id] = rule
 		else:
 			messages.append(line)
 
@@ -119,8 +182,16 @@ def PartA():
 	TestDataA()
 
 	rules, messages = Parse()
+	root = rules[0]
+	root.BuildTree(rules)
 
-	ShowAnswer("?")
+	answer = 0
+	for msg in messages:
+		valid, _ = root.Validate(msg)
+		if valid:
+			answer += 1
+
+	ShowAnswer(answer)
 
 #########################################
 #########################################
