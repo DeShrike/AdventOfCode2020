@@ -136,6 +136,7 @@ class Tile():
 		self.fliph = False
 		self.flipv = False
 		self.used = False
+		self.mode = 0
 
 	def ToOriginal(self):
 		self.lines = self.original[:]
@@ -145,14 +146,17 @@ class Tile():
 		self.fliph = False
 		self.flipv = False
 		self.rotation = 0
+		self.mode = 0
 
 	def NextConfiguation(self) -> bool:
+		self.mode += 1
 		if self.fliph and self.flipv:
 			self.rotation += 1
 			self.fliph = False
 			self.flipv = False
 			if self.rotation > 3:
-				self.Reset()
+				# self.Reset()
+				#print("No advance")
 				return False
 		elif not self.fliph and self.flipv:
 			self.flipv = False
@@ -172,7 +176,7 @@ class Tile():
 		if self.fliph:
 			self.FlipHorizontal()
 
-		# print(f"Rotate: {self.rotation}  FlipH: {self.fliph}  FlipV: {self.flipv}")
+		#print(f"Rotate: {self.rotation}  FlipH: {self.fliph}  FlipV: {self.flipv}")
 		# self.Print()
 
 		return True
@@ -244,38 +248,33 @@ class Solver():
 	def Advance(self, item):
 		tileid = self.picture[item[1]][item[0]]
 		tile = self.tiles[tileid]
+		#print(f"Advancening #{tile.id}")
 		if tile.NextConfiguation() == False:
 			return None
 		return item
 
-	def FindSpot(self):
+	def FindSpot(self, lastid):
+		canStart = (lastid == 0)
 		for y in range(self.squaresize):
 			for x in range(self.squaresize):
 				if self.picture[y][x] == None:
+					#print(f"Find tile for {x},{y}     {lastid}")
 					for t in self.tiles:
 						tile = self.tiles[t]
 						if tile.used:
 							continue
+						if tile.id == lastid:
+							# print("Canstart")
+							canStart = True
+							continue
+						if canStart == False:
+							#print("Cant start yet")
+							continue
 						#print(f"Checking tile {tile.id} for {x},{y}")
 						tile.Reset()
+						#print(f"Set {x},{y} to #{tile.id}")
 						self.picture[y][x] = tile.id
-						print(f"Finding tile for {x},{y}")
-						while True:
-							if self.IsValid():
-								print(f"Set {x},{y} to {tile.id}")
-								tile.used = True
-								# qq = input()
-								return (x, y)
-							# print("Next ?")
-							# q = input()
-							if tile.NextConfiguation() == False:
-								# print("No Next")
-								break
-								# return None
-							# q = input()
-
-						self.picture[y][x] = None
-						# q = input()
+						return (x, y)
 					return None
 		return None
 
@@ -300,12 +299,13 @@ class Solver():
 		top = self.tiles[topid]
 		bottom = self.tiles[bottomid]
 
+		"""
 		print(topid, bottomid)
 		top.Print()
 		bottom.Print()
 		print(top.lines[-1] == bottom.lines[0])
 		q  = input()
-
+		"""
 		return top.lines[-1] == bottom.lines[0]
 
 	def IsValid(self) -> bool:
@@ -328,33 +328,72 @@ class Solver():
 
 	def Solve(self):
 		initial = 0
+		lastPoppedId = 0
 		while self.done == False:
 			if len(self.stack) == 0:
 				item = (0, 0)
 				tile = self.GetTile(initial)
+				tile.Reset()
 				initial += 1
-				tile.used = True
 				self.picture[0][0] = tile.id
-			else:
-				item = self.FindSpot()
-			if item == None:
-				if len(self.stack) == 0:
-					print("No solution")
-					return
-				item = self.stack[-1]
-				while True:
-					if self.Advance(item):
-						if self.IsValid():
-							break
-					else:
-						self.Pop()
-						break
-			else: 
+				print(f"Set 0,0 to #{tile.id}")
 				self.Push(item)
+			else:
+				pass
 
-			print(len(self.stack))	
+			if self.popped:
+				self.popped = False
+				item = self.FindSpot(lastPoppedId)
+				lastPoppedId = 0
+				if item is not None:
+					#print(f"Set {item[0]},{item[1]} to {self.picture[item[1]][item[0]]} Mode {self.tiles[self.picture[item[1]][item[0]]].mode}")
+					self.Push(item)
+					continue
+				else:
+					something wrong here
+					#self.popped = True
+					#self.Pop()
+					#print("X")
+					pass
+
+			if self.IsValid() == False:
+				item = self.stack[-1]
+				# print(f"Advancing {item}")
+				if self.Advance(item) == None:
+					lastPoppedId = self.picture[item[1]][item[0]]
+					#print("Pop")
+					self.popped = True
+					self.Pop()
+				else:
+					pass
+					#print(f"Set {item[0]},{item[1]} to {self.picture[item[1]][item[0]]} Mode {self.tiles[self.picture[item[1]][item[0]]].mode}")
+
+			else:
+				#print("Valid")
+				item = self.FindSpot(lastPoppedId)
+				lastPoppedId = 0
+				if item is not None:
+					#print(f"SEt {item[0]},{item[1]} to {self.picture[item[1]][item[0]]} Mode {self.tiles[self.picture[item[1]][item[0]]].mode}")
+					self.Push(item)
+				else:
+					#print("XX")
+					pass
+
+			print(("*" * len(self.stack)) + (" " * 10), end = "\r")	
 			if self.AllDone():
 				self.done = True
+
+			if False:
+				for q in self.picture:
+					for qq in q:
+						if qq == None:
+							print(".... .. |", end = "")
+						else:
+							tile = self.tiles[qq]
+							print(f"{qq} {tile.mode:2} |", end = "")
+					print("")
+
+				qq = input()
 
 	def SolveX(self):
 		while True:
@@ -383,7 +422,6 @@ class Solver():
 				if item == None:
 					print("Pop 2")
 					item = self.Pop()
-					
 
 					tileid = self.picture[item[1]][item[0]]
 					tile = self.tiles[tileid]
