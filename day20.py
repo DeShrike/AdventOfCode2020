@@ -137,6 +137,68 @@ class Tile():
 		self.flipv = False
 		self.used = False
 		self.mode = 0
+		self.numconfiurations = 0
+		self.bottoms = []
+		self.tops = []
+		self.rights = []
+		self.lefts = []
+
+	def CurrentLeft(self):
+		return self.lefts[self.mode]
+
+	def CurrentRight(self):
+		return self.rights[self.mode]
+
+	def CurrentTop(self):
+		return self.tops[self.mode]
+
+	def CurrentBottom(self):
+		return self.bottoms[self.mode]
+
+	def CalculateValueHor(self, lineindex:int) -> int:
+		l = self.lines[lineindex]
+		l = l.replace(".", "0").replace("#", "1")
+		return int(l, 2)
+
+	def CalculateValueVer(self, colindex:int) -> int:
+		s = ""
+		for i in self.lines:
+			s += i[colindex]
+		s = s.replace(".", "0").replace("#", "1")
+		return int(s, 2)
+
+	def Prepare(self):
+		self.Reset()
+		while True:
+			self.numconfiurations += 1
+			# Calculating top border
+			top = self.CalculateValueHor(0)
+			self.tops.append(top)
+
+			# Calculating bottom border
+			bottom = self.CalculateValueHor(-1)
+			self.bottoms.append(bottom)
+
+			# Calculating left border
+			left = self.CalculateValueVer(0)
+			self.lefts.append(left)
+
+			# Calculating right border
+			right = self.CalculateValueVer(-1)
+			self.rights.append(right)
+
+			if self.NextConfiguationReal() == False:
+				break
+
+		"""
+		self.Print()
+		print(self.numconfiurations)
+		print(f"Tops:    {self.tops}")
+		print(f"Bottoms: {self.bottoms}")
+		print(f"Lefts:   {self.lefts}")
+		print(f"Rights:  {self.rights}")
+		q = input()
+		"""
 
 	def ToOriginal(self):
 		self.lines = self.original[:]
@@ -148,7 +210,13 @@ class Tile():
 		self.rotation = 0
 		self.mode = 0
 
-	def NextConfiguation(self) -> bool:
+	def NextConfiguration(self) -> bool:
+		self.mode += 1
+		if self.mode >= self.numconfiurations:
+			return False
+		return True
+		
+	def NextConfiguationReal(self) -> bool:
 		self.mode += 1
 		if self.fliph and self.flipv:
 			self.rotation += 1
@@ -214,29 +282,36 @@ class Tile():
 		self.original.append(line)
 
 def Parse():
-	tiles = {}
+	tiles = []
 	currenttile = None
 	for line in inputdata:
 		if line[0:5] == "Tile ":
 			tileid = int(line[5:-1])
 			currenttile = Tile(tileid)
-			tiles[tileid] = currenttile
+			tiles.append(currenttile)
 		elif line == "":
 			continue
 		else:
 			currenttile.AddLine(line)
 
+	for tile in tiles:
+		tile.Prepare()
+
 	return tiles
+
+class Item():
+	def __init__(self, x: int, y: int, tileix: int):
+		self.x = x
+		self.y = y
+		self.tileindex = tileix
 
 class Solver():
 	def __init__(self, tiles):
 		self.tiles = tiles
-		self.squaresize = int(math.sqrt(len(self.tiles)))
+		self.tilecount = len(self.tiles)
+		self.squaresize = int(math.sqrt(self.tilecount))
 		self.picture = [ [None for _ in range(self.squaresize)] for _ in range(self.squaresize) ]
 		self.stack = []
-		self.popped = False
-		self.done = False
-
 		"""
 		for t in self.tiles:
 			tile = self.tiles[t]
@@ -245,67 +320,73 @@ class Solver():
 		qq = input()
 		"""
 
-	def Advance(self, item):
-		tileid = self.picture[item[1]][item[0]]
-		tile = self.tiles[tileid]
+	def NextTileIndex(self, item) -> int:
+		currentindex = item.tileindex + 1
+		if currentindex >= self.tilecount:
+			return None
+		#print(f"Find NextTile from {item.tileindex} ", end ="")
+		while self.tiles[currentindex].used:
+			currentindex += 1
+			if currentindex >= self.tilecount:
+				#print("None Found !")
+				return None
+		self.tiles[currentindex].Reset()
+		self.tiles[currentindex].used = True
+		#print(f"Found {currentindex}")
+		return currentindex
+
+	def Advance(self, item) -> bool:
+		# tileid = self.picture[item[1]][item[0]]
+		tile = self.tiles[item.tileindex]
 		#print(f"Advancening #{tile.id}")
 		if tile.NextConfiguation() == False:
-			return None
-		return item
+			tile.Reset()
+			tile.used = False
+			nextindex = self.NextTileIndex(item)
+			if nextindex is None:
+				return False
+			item.tileindex = nextindex
 
-	def FindSpot(self, lastid):
-		canStart = (lastid == 0)
+		return True
+
+	def FindSpot(self):
 		for y in range(self.squaresize):
 			for x in range(self.squaresize):
-				if self.picture[y][x] == None:
+				item = self.picture[y][x]
+				if item == None:
 					#print(f"Find tile for {x},{y}     {lastid}")
-					for t in self.tiles:
-						tile = self.tiles[t]
+					for index in range(self.tilecount):
+						tile = self.tiles[index]
 						if tile.used:
-							continue
-						if tile.id == lastid:
-							# print("Canstart")
-							canStart = True
-							continue
-						if canStart == False:
-							#print("Cant start yet")
 							continue
 						#print(f"Checking tile {tile.id} for {x},{y}")
 						tile.Reset()
+						tile.used = True
 						#print(f"Set {x},{y} to #{tile.id}")
-						self.picture[y][x] = tile.id
-						return (x, y)
+						item = Item(x, y, index)
+						return item
 					return None
 		return None
 
 	def IsValidHorizontal(self, x: int, y: int) -> bool:
-		leftid = self.picture[y][x]
-		rightid = self.picture[y][x + 1]
-		if leftid is None or rightid is None:
+		leftitem = self.picture[y][x]
+		rightitem = self.picture[y][x + 1]
+		if leftitem is None or rightitem is None:
 			return True
-		left = self.tiles[leftid]
-		right = self.tiles[rightid]
+		left = self.tiles[leftitem.tileindex]
+		right = self.tiles[rightitem.tileindex]
 		for l, r in zip(left.lines, right.lines):
 			if l[-1] != r[0]:
 				return False
-
 		return True
 
 	def IsValidVertical(self, x: int, y: int) -> bool:
-		topid = self.picture[y][x]
-		bottomid = self.picture[y + 1][x]
-		if topid is None or bottomid is None:
+		topitem = self.picture[y][x]
+		bottomitem = self.picture[y + 1][x]
+		if topitem is None or bottomitem is None:
 			return True
-		top = self.tiles[topid]
-		bottom = self.tiles[bottomid]
-
-		"""
-		print(topid, bottomid)
-		top.Print()
-		bottom.Print()
-		print(top.lines[-1] == bottom.lines[0])
-		q  = input()
-		"""
+		top = self.tiles[topitem.tileindex]
+		bottom = self.tiles[bottomitem.tileindex]
 		return top.lines[-1] == bottom.lines[0]
 
 	def IsValid(self) -> bool:
@@ -323,151 +404,91 @@ class Solver():
 				return False 
 		return self.IsValid()
 
-	def GetTile(self, ix):
-		return list(self.tiles.values())[ix]	
-
 	def Solve(self):
-		initial = 0
-		lastPoppedId = 0
-		while self.done == False:
-			if len(self.stack) == 0:
-				item = (0, 0)
-				tile = self.GetTile(initial)
-				tile.Reset()
-				initial += 1
-				self.picture[0][0] = tile.id
-				print(f"Set 0,0 to #{tile.id}")
-				self.Push(item)
-			else:
-				pass
+		done = False
+		lastlen = 0
+		popped = False
+		item = Item(0, 0, 0)
+		self.Push(item)
+		while done == False:
 
-			if self.popped:
-				self.popped = False
-				item = self.FindSpot(lastPoppedId)
-				lastPoppedId = 0
-				if item is not None:
-					#print(f"Set {item[0]},{item[1]} to {self.picture[item[1]][item[0]]} Mode {self.tiles[self.picture[item[1]][item[0]]].mode}")
-					self.Push(item)
-					continue
-				else:
-					something wrong here
-					#self.popped = True
-					#self.Pop()
-					#print("X")
-					pass
-
-			if self.IsValid() == False:
-				item = self.stack[-1]
-				# print(f"Advancing {item}")
-				if self.Advance(item) == None:
-					lastPoppedId = self.picture[item[1]][item[0]]
-					#print("Pop")
-					self.popped = True
+			if self.IsValid() == False or popped:
+				popped = False
+				lastitem = self.stack[-1]
+				#print("Advance ?")
+				if self.Advance(lastitem) == False:
+					#print("No Advance")
+					popped = True
 					self.Pop()
-				else:
-					pass
-					#print(f"Set {item[0]},{item[1]} to {self.picture[item[1]][item[0]]} Mode {self.tiles[self.picture[item[1]][item[0]]].mode}")
-
 			else:
-				#print("Valid")
-				item = self.FindSpot(lastPoppedId)
-				lastPoppedId = 0
-				if item is not None:
-					#print(f"SEt {item[0]},{item[1]} to {self.picture[item[1]][item[0]]} Mode {self.tiles[self.picture[item[1]][item[0]]].mode}")
-					self.Push(item)
-				else:
-					#print("XX")
-					pass
+				newitem = self.FindSpot()
+				if newitem is None:
+					#print("No spot found")
+					break
+				self.Push(newitem)
 
-			print(("*" * len(self.stack)) + (" " * 10), end = "\r")	
+			if True:
+				l = len(self.stack)
+				if lastlen != l:
+					lastlen = l
+					if l <= 70:
+						print(("*" * l) + (" " * 5), end = "\r")	
+					else:
+						print("..." + ("*" * 70) + f"{l}" + (" " * 5), end = "\r")
+	
 			if self.AllDone():
-				self.done = True
+				done = True
 
 			if False:
-				for q in self.picture:
-					for qq in q:
-						if qq == None:
+				for y in range(self.squaresize):
+					for x in range(self.squaresize):
+						item = self.picture[y][x]
+						if item is None:
 							print(".... .. |", end = "")
 						else:
-							tile = self.tiles[qq]
-							print(f"{qq} {tile.mode:2} |", end = "")
+							tile = self.tiles[item.tileindex]
+							print(f"{tile.id} {tile.mode:2} |", end = "")
 					print("")
-
-				qq = input()
-
-	def SolveX(self):
-		while True:
-			print("Solve")
-			if self.popped:
-				print("A")
-				self.popped = False
-				if len(self.stack) == 0:
-					self.done = True
-
-					if self.AllDone():
-						print("Found a solution !")
-						return
-
-					print("No solution")
-					return
-				item = self.stack[-Solve]
-				item = self.Advance(item)
-				if item == None:
-					print("Pop 1")
-					self.Pop()
-					self.popped = True
-			else:
-				print("B")
-				item = self.FindSpot()
-				if item == None:
-					print("Pop 2")
-					item = self.Pop()
-
-					tileid = self.picture[item[1]][item[0]]
-					tile = self.tiles[tileid]
-
-
-					self.popped = True
-				else:
-					print("Push", item)
-					self.Push(item)
-
-			for y in self.picture:
-				for x in y:
-					print(f"{x} ", end = "")
+				print(self.IsValid())
+				for ix in range(self.tilecount):
+					tile = self.tiles[ix]
+					print(f"{BrightGreen if tile.used else ''}{tile.id}{Reset}|", end = "")
 				print("")
-			q = input()
+				qq = input()
 
 	def Push(self, item):
 		self.stack.append(item)
-		tileid = self.picture[item[1]][item[0]]
-		tile = self.tiles[tileid]
+		self.picture[item.y][item.x] = item
+		tile = self.tiles[item.tileindex]
+		tile.Reset()
 		tile.used = True
-		# self.picture[item[1]][item[0]] = item
 
 	def Pop(self):
 		if len(self.stack) == 0:
 			return None
 		item = self.stack.pop()
-		tileid = self.picture[item[1]][item[0]]
-		tile = self.tiles[tileid]
+		tile = self.tiles[item.tileindex]
 		tile.used = False
-		self.picture[item[1]][item[0]] = None
+		self.picture[item.y][item.x] = None
 		return item
 
 	def AnswerA(self):
-		tl = self.picture[0][0]
-		tr = self.picture[0][-1]
-		bl = self.picture[-1][0]
-		br = self.picture[-1][-1]
-		return tl * tr * bl * br
+		tl_index = self.picture[0][0].tileindex
+		tr_index = self.picture[0][-1].tileindex
+		bl_index = self.picture[-1][0].tileindex
+		br_index = self.picture[-1][-1].tileindex
+		tl = self.tiles[tl_index]
+		tr = self.tiles[tr_index]
+		bl = self.tiles[bl_index]
+		br = self.tiles[br_index]
+		return tl.id * tr.id * bl.id * br.id
 
 #########################################
 #########################################
 
 def PartA():
 	StartPartA()
-	TestDataA()
+	TestDataA()		# 9.5 seconds
 
 	tiles = Parse()
 	solver = Solver(tiles)
