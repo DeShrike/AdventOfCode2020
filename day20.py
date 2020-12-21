@@ -168,9 +168,10 @@ class Tile():
 		return int(s, 2)
 
 	def Prepare(self):
-		self.Reset()
+		self.ResetReal()
 		while True:
 			self.numconfiurations += 1
+
 			# Calculating top border
 			top = self.CalculateValueHor(0)
 			self.tops.append(top)
@@ -187,7 +188,7 @@ class Tile():
 			right = self.CalculateValueVer(-1)
 			self.rights.append(right)
 
-			if self.NextConfiguationReal() == False:
+			if self.NextConfigurationReal() == False:
 				break
 
 		"""
@@ -204,6 +205,9 @@ class Tile():
 		self.lines = self.original[:]
 
 	def Reset(self):
+		self.mode = 0
+
+	def ResetReal(self):
 		self.ToOriginal()
 		self.fliph = False
 		self.flipv = False
@@ -215,8 +219,8 @@ class Tile():
 		if self.mode >= self.numconfiurations:
 			return False
 		return True
-		
-	def NextConfiguationReal(self) -> bool:
+
+	def NextConfigurationReal(self) -> bool:
 		self.mode += 1
 		if self.fliph and self.flipv:
 			self.rotation += 1
@@ -339,7 +343,7 @@ class Solver():
 		# tileid = self.picture[item[1]][item[0]]
 		tile = self.tiles[item.tileindex]
 		#print(f"Advancening #{tile.id}")
-		if tile.NextConfiguation() == False:
+		if tile.NextConfiguration() == False:
 			tile.Reset()
 			tile.used = False
 			nextindex = self.NextTileIndex(item)
@@ -368,6 +372,7 @@ class Solver():
 					return None
 		return None
 
+	"""
 	def IsValidHorizontal(self, x: int, y: int) -> bool:
 		leftitem = self.picture[y][x]
 		rightitem = self.picture[y][x + 1]
@@ -379,6 +384,18 @@ class Solver():
 			if l[-1] != r[0]:
 				return False
 		return True
+	"""
+
+	def IsValidHorizontal(self, x: int, y: int) -> bool:
+		leftitem = self.picture[y][x]
+		rightitem = self.picture[y][x + 1]
+		if leftitem is None or rightitem is None:
+			return True
+
+		left = self.tiles[leftitem.tileindex]
+		right = self.tiles[rightitem.tileindex]
+
+		return left.CurrentRight() == right.CurrentLeft()
 
 	def IsValidVertical(self, x: int, y: int) -> bool:
 		topitem = self.picture[y][x]
@@ -387,7 +404,18 @@ class Solver():
 			return True
 		top = self.tiles[topitem.tileindex]
 		bottom = self.tiles[bottomitem.tileindex]
+		return top.CurrentBottom() == bottom.CurrentTop()
+
+	"""
+	def IsValidVertical(self, x: int, y: int) -> bool:
+		topitem = self.picture[y][x]
+		bottomitem = self.picture[y + 1][x]
+		if topitem is None or bottomitem is None:
+			return True
+		top = self.tiles[topitem.tileindex]
+		bottom = self.tiles[bottomitem.tileindex]
 		return top.lines[-1] == bottom.lines[0]
+	"""
 
 	def IsValid(self) -> bool:
 		for y in range(self.squaresize - 1):
@@ -405,13 +433,14 @@ class Solver():
 		return self.IsValid()
 
 	def Solve(self):
+		stap = 0
 		done = False
 		lastlen = 0
 		popped = False
 		item = Item(0, 0, 0)
 		self.Push(item)
 		while done == False:
-
+			stap += 1
 			if self.IsValid() == False or popped:
 				popped = False
 				lastitem = self.stack[-1]
@@ -421,23 +450,25 @@ class Solver():
 					popped = True
 					self.Pop()
 			else:
+				if self.AllDone():
+					done = True
+					continue
+
 				newitem = self.FindSpot()
 				if newitem is None:
 					#print("No spot found")
 					break
 				self.Push(newitem)
 
-			if True:
+			if stap % 10000 == 0:
 				l = len(self.stack)
-				if lastlen != l:
+				if True: # lastlen != l:
 					lastlen = l
 					if l <= 70:
-						print(("*" * l) + (" " * 5), end = "\r")	
+						print(("*" * l) + (" " * 5))	
 					else:
-						print("..." + ("*" * 70) + f"{l}" + (" " * 5), end = "\r")
-	
-			if self.AllDone():
-				done = True
+						print(("*" * 70) + f"{l}" + (" " * 5))
+					print(f" {self.stack[0].tileindex} {self.stack[1].tileindex} {self.stack[2].tileindex}")
 
 			if False:
 				for y in range(self.squaresize):
@@ -488,7 +519,7 @@ class Solver():
 
 def PartA():
 	StartPartA()
-	TestDataA()		# 9.5 seconds
+	#TestDataA()		# 9.5 seconds
 
 	tiles = Parse()
 	solver = Solver(tiles)
