@@ -1,5 +1,6 @@
 import time
 import os
+from sys import platform
 
 # Helper methods
 
@@ -84,6 +85,11 @@ def GetAnswerA():
 
 def GetAnswerB():
 	return AnswerB
+
+if platform == "win32":
+	import msvcrt, ctypes
+	kernel32 = ctypes.windll.kernel32
+	kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
 
 ## Main
 
