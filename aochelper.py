@@ -1,6 +1,6 @@
 import time
 import os
-from sys import platform
+from sys import platform, stdout
 
 # Helper methods
 
@@ -17,6 +17,12 @@ AnswerB = None
 Reversed =      u"\u001b[7m"
 DimBackground = u"\u001b[5m"
 Reset =         u"\u001b[0m"
+
+ClearScreen =   u"\u001b[2J"
+ClearLine =     u"\u001b[2K"
+
+HideCursor =    u"\u001b[?25l"
+ShowCursor =    u"\u001b[?25h"
 
 BrightBlack =   u"\u001b[30;1m"
 BrightRed =     u"\u001b[31;1m"
@@ -85,6 +91,12 @@ def GetAnswerA():
 
 def GetAnswerB():
 	return AnswerB
+
+def MoveCursor(column: int, line: int) -> str:
+    return u"\u001b[%d;%dH" % (line, column)
+
+def Flush():
+	stdout.flush()
 
 if platform == "win32":
 	import msvcrt, ctypes
