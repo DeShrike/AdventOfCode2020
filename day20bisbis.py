@@ -594,10 +594,26 @@ def RotateImage(image):
 			grid[N - 1 - y][x] = temp 
 	image.clear()
 	for y in grid:
-		s = ""
-		for c in y:
-			s += c
-		image.append(s)
+		image.append(y)
+
+def FindMonsters(image, monster_parts):
+	monster_height = max([ d[1] for d in monster_parts ])
+	monster_width = max([ d[0] for d in monster_parts ])
+	found = False
+	imagesize = len(image)
+	for y in range(imagesize - monster_height):
+		for x in range(imagesize - monster_width):
+			match = True
+			for delta in monster_parts:
+				if image[y + delta[1]][x + delta[0]] != "#":
+					match = False
+					break
+			if match:
+				found = True
+				for delta in monster_parts:
+					image[y + delta[1]][x + delta[0]] = "O"
+
+	return found
 
 #########################################
 #########################################
@@ -617,37 +633,14 @@ def PartA():
 	answer = solver.AnswerA()
 	ShowAnswer(answer)
 
-def FindMonsters(image, monster_parts):
-	monster_height = max([ d[0] for d in monster_parts ])
-	monster_width = max([ d[1] for d in monster_parts ])
-	found = False
-	imagesize = len(image)
-	print(imagesize, monster_width, monster_height)
-	for y in range(imagesize - monster_height - 2):
-		for x in range(imagesize - monster_width - 2):
-			match = True
-			for delta in monster_parts:
-				if image[y + delta[1]][x + delta[0]] != "#":
-					match = False
-					break
-			if match:
-				found = True
-				for delta in monster_parts:
-					image[y + delta[1]][x + delta[0]] = "O"
-
-	return found
-
-#########################################
-#########################################
-
 def PartB():
 	global with_fancy_display
 	StartPartB()
-	TestData()
+	# TestData()
 
 	with_fancy_display = False
 	tiles = Parse()
-	solver = Solver(tiles, True)
+	solver = Solver(tiles, False)
 	solver.Solve()
 
 	image = solver.BuildImageForPartB()
@@ -662,18 +655,22 @@ def PartB():
 			if char == "#":
 				monster_parts.append((x, y))
 
-	print(monster_parts)
-	a = input()
-
 	while not FindMonsters(image, monster_parts):
+		print("Rotating")
 		RotateImage(image)
 
+	answer = 0
+	for line in image:
+		for c in line:
+			answer = answer + (1 if c == "#" else 0)
+	"""
 	for iline in image:
 		for c in iline:
 			print(c, end = "")
 		print("")
+	"""
 
-	ShowAnswer("?")
+	ShowAnswer(answer)
 
 #########################################
 #########################################
@@ -685,7 +682,7 @@ def Main():
 	StartDay(20)
 	ReadInput()
 	PartA()
-	PartB()
+	#PartB()
 	print("")
 
 #########################################
