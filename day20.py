@@ -519,7 +519,7 @@ class Solver():
 
 def PartA():
 	StartPartA()
-	#TestDataA()		# 9.5 seconds
+	TestDataA()		# 9.5 seconds
 
 	tiles = Parse()
 	solver = Solver(tiles)

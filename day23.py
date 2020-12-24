@@ -2,7 +2,6 @@ from aochelper import *
 import math
 import re
 from collections import deque
-import numpy as np
 
 #########################################
 #########################################
@@ -31,17 +30,6 @@ def RemoveCW(numbers, current):
 		numbers.remove(num)
 		return num
 
-def RemoveCWNumpy(numbers, current):
-	pos = np.where(numbers == current)[0] + 1
-	if pos < len(numbers):
-		num = numbers[pos]
-		np.delete(numbers, pos)
-		return num
-	else:
-		num = numbers[0]
-		np.delete(numbers, 0)
-		return num
-
 def ShowNumbers(numbers, current):
 	for num in numbers:
 		if num == current:
@@ -50,9 +38,11 @@ def ShowNumbers(numbers, current):
 	print("")
 
 def Play(numberss, turns: int):
-	numbers = deque()
+	numbers = []
 	for i in numberss:
 		numbers.append(i)
+
+	hist = {}
 
 	current = numbers[0]
 	for i in range(turns):
@@ -80,6 +70,16 @@ def Play(numberss, turns: int):
 		# qq = input()
 		# print("")
 
+		ix1 = numbers.index(1)
+		if ix1 < len(numbers) - 2:
+			deze = (numbers[ix1 + 1], numbers[ix1 + 2])
+			if deze in hist:
+				hist[deze] += 1
+				print(deze, hist[deze])
+			else:
+				hist[deze] = 1
+
+
 	answerA = ""
 	ix = numbers.index(1) + 1
 	while numbers[ix] != 1:
@@ -87,54 +87,6 @@ def Play(numberss, turns: int):
 		ix = (ix + 1) % len(numbers)
 
 	ix1 = numbers.index(1)
-	answerB = numbers[ix1 + 1] * numbers[ix1 + 2]
-	return answerA, answerB
-
-def PlayNumpy(numberss, turns: int):
-	nums = deque()
-	for i in numberss:
-		nums.append(i)
-
-	current = nums[0]
-
-	numbers = np.array(nums)
-
-	for i in range(turns):
-		print(f"{i}", end = "\r")
-		# ShowNumbers(numbers, current)
-		c1 = RemoveCWNumpy(numbers, current)
-		c2 = RemoveCWNumpy(numbers, current)
-		c3 = RemoveCWNumpy(numbers, current)
-		# print(f"Pickup {c1} {c2} {c3}")
-		# ShowNumbers(numbers, current)
-		dest = current - 1
-		while dest not in numbers:
-			dest -= 1
-			if dest <= 0:
-				dest = max(numbers)
-		
-		destix = np.where(numbers == dest)[0]
-		# print(f"Target: {dest} {destix}")
-		np.insert(numbers, destix + 1, c3)
-		np.insert(numbers, destix + 1, c2)
-		np.insert(numbers, destix + 1, c1)
-		#numbers.insert(destix + 1, c3)
-		#numbers.insert(destix + 1, c2)
-		#numbers.insert(destix + 1, c1)
-		cix = np.where(numbers == current)[0]
-		cix = (cix + 1) % len(numbers)
-		current = numbers[cix]
-		# ShowNumbers(numbers, current)
-		# qq = input()
-		# print("")
-
-	answerA = ""
-	ix = np.where(numbers == 1)[0] + 1
-	while numbers[ix] != 1:
-		answerA += str(numbers[ix])
-		ix = (ix + 1) % len(numbers)
-
-	ix1 = np.where(numbers == 1)[0]
 	answerB = numbers[ix1 + 1] * numbers[ix1 + 2]
 	return answerA, answerB
 
@@ -146,7 +98,7 @@ def PartA():
 	# TestData()
 
 	numbers = [int(c) for c in inputdata[0]]
-	answer, _ = PlayNumpy(numbers, 100)
+	answer, _ = Play(numbers, 100)
 	ShowAnswer(answer)
 
 #########################################
@@ -154,13 +106,13 @@ def PartA():
 
 def PartB():
 	StartPartB()
-	TestData()
+	# TestData()
 
 	numbers = [int(c) for c in inputdata[0]]
 	m = max(numbers) + 1
 	for num in range(m, 1_000_000 + 1):
 		numbers.append(num)
-	_, answer, = PlayNumpy(numbers, 10_000_000)
+	_, answer, = Play(numbers, 10_000_000)
 	ShowAnswer(answer)
 
 #########################################
