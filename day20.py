@@ -11,7 +11,9 @@ import re
 #########################################
 #########################################
 
-def TestDataA():
+with_fancy_display = False
+
+def TestData():
 	inputdata.clear()
 	inputdata.append("Tile 2311:")
 	inputdata.append("..##.#..#.")
@@ -121,9 +123,6 @@ def TestDataA():
 	inputdata.append("..#.......")
 	inputdata.append("..#.###...")
 
-def TestDataB():
-	inputdata.clear()
-
 #########################################
 #########################################
 
@@ -191,15 +190,7 @@ class Tile():
 			if self.NextConfigurationReal() == False:
 				break
 
-		"""
-		self.Print()
-		print(self.numconfiurations)
-		print(f"Tops:    {self.tops}")
-		print(f"Bottoms: {self.bottoms}")
-		print(f"Lefts:   {self.lefts}")
-		print(f"Rights:  {self.rights}")
-		q = input()
-		"""
+		self.Reset()
 
 	def ToOriginal(self):
 		self.lines = self.original[:]
@@ -213,6 +204,11 @@ class Tile():
 		self.flipv = False
 		self.rotation = 0
 		self.mode = 0
+
+	def OrientToMode(self, newmode):
+		self.ResetReal()
+		while self.mode < newmode:
+			self.NextConfigurationReal()
 
 	def NextConfiguration(self) -> bool:
 		self.mode += 1
@@ -247,9 +243,6 @@ class Tile():
 			self.FlipVertical()
 		if self.fliph:
 			self.FlipHorizontal()
-
-		#print(f"Rotate: {self.rotation}  FlipH: {self.fliph}  FlipV: {self.flipv}")
-		# self.Print()
 
 		return True
 
@@ -310,237 +303,386 @@ class Item():
 		self.tileindex = tileix
 
 class Solver():
-	def __init__(self, tiles):
+	def __init__(self, tiles, testmode: bool):
+		self.testmode = testmode
 		self.tiles = tiles
 		self.tilecount = len(self.tiles)
-		self.squaresize = int(math.sqrt(self.tilecount))
+		self.squaresize = int(math.sqrt(self.tilecount)) * 2 + 5
+		if self.testmode:
+			self.squaresize = 12
+
 		self.picture = [ [None for _ in range(self.squaresize)] for _ in range(self.squaresize) ]
 		self.stack = []
-		"""
-		for t in self.tiles:
-			tile = self.tiles[t]
-			tile.Reset()
-			tile.Print()
-		qq = input()
-		"""
 
-	def NextTileIndex(self, item) -> int:
-		currentindex = item.tileindex + 1
-		if currentindex >= self.tilecount:
-			return None
-		#print(f"Find NextTile from {item.tileindex} ", end ="")
-		while self.tiles[currentindex].used:
-			currentindex += 1
-			if currentindex >= self.tilecount:
-				#print("None Found !")
-				return None
-		self.tiles[currentindex].Reset()
-		self.tiles[currentindex].used = True
-		#print(f"Found {currentindex}")
-		return currentindex
+		self.minx = 1000
+		self.maxx = -1000
+		self.miny = 1000
+		self.maxy = -1000
 
-	def Advance(self, item) -> bool:
-		# tileid = self.picture[item[1]][item[0]]
-		tile = self.tiles[item.tileindex]
-		#print(f"Advancening #{tile.id}")
-		if tile.NextConfiguration() == False:
-			tile.Reset()
-			tile.used = False
-			nextindex = self.NextTileIndex(item)
-			if nextindex is None:
-				return False
-			item.tileindex = nextindex
+		self.path = [ (0, 0) ]
+		for radius in range(1, 5 if self.testmode else 13):
+			for xx, yy in self.FollowSquareCircle(radius):
+				if (xx, yy) not in self.path:
+					self.path.append( (xx, yy) )
 
-		return True
+	def UpdateFancyDisplay(self, x: int, y: int, flush: bool = True):
+		item = self.picture[y][x]
+		print(MoveCursor(x + 1, y + 5), end = "")
+		if item is None:
+			print(".", end = "")
+		else:
+			tile = self.tiles[item.tileindex]
+			print(chr(65 + tile.mode), end = "")
+		print(MoveCursor(1, 15), end = "")
+		if flush:
+			Flush()
 
-	def FindSpot(self):
-		for y in range(self.squaresize):
-			for x in range(self.squaresize):
-				item = self.picture[y][x]
-				if item == None:
-					#print(f"Find tile for {x},{y}     {lastid}")
-					for index in range(self.tilecount):
-						tile = self.tiles[index]
-						if tile.used:
-							continue
-						#print(f"Checking tile {tile.id} for {x},{y}")
-						tile.Reset()
-						tile.used = True
-						#print(f"Set {x},{y} to #{tile.id}")
-						item = Item(x, y, index)
-						return item
-					return None
+	def SetFancyDisplayIndicator(self, x: int, y: int):
+		print(MoveCursor(x + 1, y + 5), end = "")
+		print(f"{BrightRed}?{Reset}", end = "")
+		print(MoveCursor(1, 15), end = "")
+		Flush()
+
+	def InitFancyDisplay(self):
+		print(HideCursor, end = "")
+		for y in reversed(range(self.squaresize)):
+			for x in reversed(range(self.squaresize)):
+				self.UpdateFancyDisplay(x, y, False)
+		Flush()
+
+#     12345
+#     0   6
+#     9 # 1
+#     8   2
+#     76543
+
+	def FollowSquareCircle(self, size: int):
+		for y in range(0, size + 1):
+			yield (size, y)
+		for x in range(size - 1, -size - 1, -1):
+			yield (x, size)
+		for y in range(size - 1, -size - 1, -1):
+			yield (-size, y)
+		for x in range(-size + 1, size + 1):
+			yield (x, -size)
+		for y in range(-size, 0):
+			yield (size, y)		
+
+	def FindTileIndexWithLeftBorder(self, border: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			if border in t.lefts:
+				t.mode = t.lefts.index(border)
+				return ix
 		return None
 
-	"""
-	def IsValidHorizontal(self, x: int, y: int) -> bool:
-		leftitem = self.picture[y][x]
-		rightitem = self.picture[y][x + 1]
-		if leftitem is None or rightitem is None:
-			return True
-		left = self.tiles[leftitem.tileindex]
-		right = self.tiles[rightitem.tileindex]
-		for l, r in zip(left.lines, right.lines):
-			if l[-1] != r[0]:
-				return False
-		return True
-	"""
+	def FindTileIndexWithTopBorder(self, border: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			if border in t.tops:
+				t.mode = t.tops.index(border)
+				return ix
+		return None
 
-	def IsValidHorizontal(self, x: int, y: int) -> bool:
-		leftitem = self.picture[y][x]
-		rightitem = self.picture[y][x + 1]
-		if leftitem is None or rightitem is None:
-			return True
+	def FindTileIndexWithRightBorder(self, border: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			if border in t.rights:
+				t.mode = t.rights.index(border)
+				return ix
+		return None
 
-		left = self.tiles[leftitem.tileindex]
-		right = self.tiles[rightitem.tileindex]
+	def FindTileIndexWithBottomBorder(self, border: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			if border in t.bottoms:
+				t.mode = t.bottoms.index(border)
+				return ix
+		return None
+	
+	def FindTileIndexWithLeftAndTopBorder(self, leftborder: int, topborder: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			for mode in range(t.numconfiurations):
+				if t.lefts[mode] == leftborder and t.tops[mode] == topborder:
+					t.mode = mode
+					return ix
+		return None
 
-		return left.CurrentRight() == right.CurrentLeft()
+	def FindTileIndexWithRightAndTopBorder(self, rightborder: int, topborder: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			for mode in range(t.numconfiurations):
+				if t.rights[mode] == rightborder and t.tops[mode] == topborder:
+					t.mode = mode
+					return ix
+		return None
 
-	def IsValidVertical(self, x: int, y: int) -> bool:
-		topitem = self.picture[y][x]
-		bottomitem = self.picture[y + 1][x]
-		if topitem is None or bottomitem is None:
-			return True
-		top = self.tiles[topitem.tileindex]
-		bottom = self.tiles[bottomitem.tileindex]
-		return top.CurrentBottom() == bottom.CurrentTop()
+	def FindTileIndexWithRightAndBottomBorder(self, rightborder: int, bottomborder: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			for mode in range(t.numconfiurations):
+				if t.rights[mode] == rightborder and t.bottoms[mode] == bottomborder:
+					t.mode = mode
+					return ix
+		return None
 
-	"""
-	def IsValidVertical(self, x: int, y: int) -> bool:
-		topitem = self.picture[y][x]
-		bottomitem = self.picture[y + 1][x]
-		if topitem is None or bottomitem is None:
-			return True
-		top = self.tiles[topitem.tileindex]
-		bottom = self.tiles[bottomitem.tileindex]
-		return top.lines[-1] == bottom.lines[0]
-	"""
+	def FindTileIndexWithLeftAndBottomBorder(self, leftborder: int, bottomborder: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			for mode in range(t.numconfiurations):
+				if t.lefts[mode] == leftborder and t.bottoms[mode] == bottomborder:
+					t.mode = mode
+					return ix
+		return None
 
-	def IsValid(self) -> bool:
-		for y in range(self.squaresize - 1):
-			for x in range(self.squaresize - 1):
-				if self.IsValidVertical(x, y) == False:
-					return False
-				if self.IsValidHorizontal(x, y) == False:
-					return False
-		return True
+	def FindTileIndexWithLeftAndBottomAndTopBorder(self, leftborder: int, bottomborder: int, topborder: int) -> int:
+		for ix, t in enumerate(self.tiles):
+			if t.used:
+				continue
+			for mode in range(t.numconfiurations):
+				if t.lefts[mode] == leftborder and t.bottoms[mode] == bottomborder and t.tops[mode] == topborder:
+					t.mode = mode
+					return ix
+		return None
 
-	def AllDone(self) -> bool:
-		for row in self.picture:
-			if None in row:
-				return False 
-		return self.IsValid()
+	def FindTileForSpot(self, x: int, y: int):
+		n_item = self.picture[y - 1][x]
+		s_item = self.picture[y + 1][x]
+		e_item = self.picture[y][x + 1]
+		w_item = self.picture[y][x - 1]
 
-	def Solve(self):
-		stap = 0
-		done = False
-		lastlen = 0
-		popped = False
-		item = Item(0, 0, 0)
-		self.Push(item)
-		while done == False:
-			stap += 1
-			if self.IsValid() == False or popped:
-				popped = False
-				lastitem = self.stack[-1]
-				#print("Advance ?")
-				if self.Advance(lastitem) == False:
-					#print("No Advance")
-					popped = True
-					self.Pop()
-			else:
-				if self.AllDone():
-					done = True
-					continue
+		n = s = e = w = None
+		if n_item is not None:
+			n = self.tiles[n_item.tileindex]
+		if s_item is not None:
+			s = self.tiles[s_item.tileindex]
+		if e_item is not None:
+			e = self.tiles[e_item.tileindex]
+		if w_item is not None:
+			w = self.tiles[w_item.tileindex]
 
-				newitem = self.FindSpot()
-				if newitem is None:
-					#print("No spot found")
-					break
-				self.Push(newitem)
-
-			if stap % 10000 == 0:
-				l = len(self.stack)
-				if True: # lastlen != l:
-					lastlen = l
-					if l <= 70:
-						print(("*" * l) + (" " * 5))	
-					else:
-						print(("*" * 70) + f"{l}" + (" " * 5))
-					print(f" {self.stack[0].tileindex} {self.stack[1].tileindex} {self.stack[2].tileindex}")
-
-			if False:
-				for y in range(self.squaresize):
-					for x in range(self.squaresize):
-						item = self.picture[y][x]
-						if item is None:
-							print(".... .. |", end = "")
-						else:
-							tile = self.tiles[item.tileindex]
-							print(f"{tile.id} {tile.mode:2} |", end = "")
-					print("")
-				print(self.IsValid())
-				for ix in range(self.tilecount):
-					tile = self.tiles[ix]
-					print(f"{BrightGreen if tile.used else ''}{tile.id}{Reset}|", end = "")
-				print("")
-				qq = input()
-
-	def Push(self, item):
-		self.stack.append(item)
-		self.picture[item.y][item.x] = item
-		tile = self.tiles[item.tileindex]
-		tile.Reset()
-		tile.used = True
-
-	def Pop(self):
-		if len(self.stack) == 0:
+		ix = None
+		if e is not None and s is None and n is None and w is None:
+			# find tile with specific right border 
+			ix = self.FindTileIndexWithRightBorder(e.CurrentLeft())
+		elif e is None and s is not None and n is None and w is None:
+			# find tile with specific bottom border 
+			ix = self.FindTileIndexWithBottomBorder(s.CurrentTop())
+		elif e is None and s is None and n is not None and w is None:
+			# find tile with specific top border 
+			ix = self.FindTileIndexWithTopBorder(n.CurrentBottom())
+		elif e is None and s is None and n is None and w is not None:
+			# find tile with specific left border 
+			ix = self.FindTileIndexWithLeftBorder(w.CurrentRight())
+		elif e is None and s is None and n is not None and w is not None:
+			# find tile with specific left and top border 
+			ix = self.FindTileIndexWithLeftAndTopBorder(w.CurrentRight(), n.CurrentBottom())
+		elif e is not None and s is None and n is not None and w is None:
+			# find tile with specific right and top border 
+			ix = self.FindTileIndexWithRightAndTopBorder(e.CurrentLeft(), n.CurrentBottom())
+		elif e is not None and s is not None and n is None and w is None:
+			# find tile with specific right and bottom border 
+			ix = self.FindTileIndexWithRightAndBottomBorder(e.CurrentLeft(), s.CurrentTop())
+		elif e is None and s is not None and n is None and w is not None:
+			# find tile with specific right and bottom border 
+			ix = self.FindTileIndexWithLeftAndBottomBorder(w.CurrentRight(), s.CurrentTop())
+		elif e is None and s is not None and n is not None and w is not None:
+			# find tile with specific right and bottom and top border 
+			ix = self.FindTileIndexWithLeftAndBottomAndTopBorder(w.CurrentRight(), s.CurrentTop(), n.CurrentBottom())
+		else:
 			return None
-		item = self.stack.pop()
-		tile = self.tiles[item.tileindex]
-		tile.used = False
-		self.picture[item.y][item.x] = None
+		if ix is None:
+			return None
+
+		self.tiles[ix].used = True
+		item = Item(x, y, ix)
 		return item
 
+	def Solve(self):
+		if with_fancy_display:
+			self.InitFancyDisplay()
+
+		cx = self.squaresize // 2 + 1
+		cy = self.squaresize // 2 + 1
+		x, y = self.path[0]
+		pathpos = 1
+		done = False
+		item = Item(x, y, 4)
+		self.tiles[item.tileindex].used = True
+		self.picture[y + cy][x + cx] = item
+		self.stack.append(item)
+		if with_fancy_display:
+			self.UpdateFancyDisplay(x + cx, y + cy)
+
+		while done == False:
+			xx, yy = self.path[pathpos]
+			if xx + cx < 0 or yy + cy < 0 or xx + cx >= self.squaresize or yy + cy >= self.squaresize:
+				pathpos += 1
+				continue
+			if with_fancy_display:
+				self.SetFancyDisplayIndicator(cx + xx,cy + yy)
+			item = self.FindTileForSpot(cx + xx,cy + yy)
+			if item is None:
+				pass
+			else:
+				self.minx = min(self.minx, cx + xx)
+				self.maxx = max(self.maxx, cx + xx)
+				self.miny = min(self.miny, cy + yy)
+				self.maxy = max(self.maxy, cy + yy)
+
+				self.picture[cy + yy][cx + xx] = item
+				self.stack.append(item)
+				if with_fancy_display:
+					self.UpdateFancyDisplay(cx + xx, cy + yy)
+
+			pathpos += 1
+			if pathpos >= len(self.path):
+				done = True
+
 	def AnswerA(self):
-		tl_index = self.picture[0][0].tileindex
-		tr_index = self.picture[0][-1].tileindex
-		bl_index = self.picture[-1][0].tileindex
-		br_index = self.picture[-1][-1].tileindex
+		tl_index = self.picture[self.miny][self.minx].tileindex
+		tr_index = self.picture[self.miny][self.maxx].tileindex
+		bl_index = self.picture[self.maxy][self.minx].tileindex
+		br_index = self.picture[self.maxy][self.maxx].tileindex
 		tl = self.tiles[tl_index]
 		tr = self.tiles[tr_index]
 		bl = self.tiles[bl_index]
 		br = self.tiles[br_index]
 		return tl.id * tr.id * bl.id * br.id
 
+	def BuildImageForPartB(self):
+		width = height = int(math.sqrt(self.tilecount)) * (10 - 2)
+		image = [[0 for _ in range(width)] for _ in range(height)]
+		cy = 0
+		for y in range(self.miny, self.maxy + 1):
+			cx = 0
+			for x in range(self.minx, self.maxx + 1):
+				tile = self.tiles[self.picture[y][x].tileindex]
+				tile.OrientToMode(tile.mode)
+				
+				for liney in range(8):
+					for linex in range(8):
+						image[cy + liney][cx + linex] = tile.lines[liney + 1][linex + 1]
+				cx += 8
+			cy += 8
+
+		return image
+
+#########################################
+#########################################
+
+def RotateImage(image):
+	grid = [ [ x for x in line ] for line in image ]
+	N = len(grid)
+	for x in range(0, int(N / 2)): 
+		for y in range(x, N - x - 1): 
+			temp = grid[x][y] 
+			grid[x][y] = grid[y][N - 1 - x] 
+			grid[y][N - 1 - x] = grid[N - 1 - x][N - 1 - y] 
+			grid[N - 1 - x][N - 1 - y] = grid[N - 1 - y][x] 
+			grid[N - 1 - y][x] = temp 
+	image.clear()
+	for y in grid:
+		image.append(y)
+
+def FindMonsters(image, monster_parts):
+	monster_height = max([ d[1] for d in monster_parts ])
+	monster_width = max([ d[0] for d in monster_parts ])
+	found = False
+	imagesize = len(image)
+	for y in range(imagesize - monster_height):
+		for x in range(imagesize - monster_width):
+			match = True
+			for delta in monster_parts:
+				if image[y + delta[1]][x + delta[0]] != "#":
+					match = False
+					break
+			if match:
+				found = True
+				for delta in monster_parts:
+					image[y + delta[1]][x + delta[0]] = "O"
+
+	return found
+
 #########################################
 #########################################
 
 def PartA():
 	StartPartA()
-	TestDataA()		# 9.5 seconds
+	#TestData()
 
 	tiles = Parse()
-	solver = Solver(tiles)
+	solver = Solver(tiles, False)
 	solver.Solve()
 
+	if with_fancy_display:
+		print(MoveCursor(1, solver.squaresize + 6), end = "")
+		print(ShowCursor, end = "")
+
 	answer = solver.AnswerA()
+	ShowAnswer(answer)
+
+def PartB():
+	global with_fancy_display
+	StartPartB()
+	# TestData()
+
+	with_fancy_display = False
+	tiles = Parse()
+	solver = Solver(tiles, False)
+	solver.Solve()
+
+	image = solver.BuildImageForPartB()
+
+	"""
+	for iline in image:
+		for c in iline:
+			print(c, end = "")
+		print("")
+	"""
+
+	monster = ["                  #",
+			   "#    ##    ##    ###",
+			   " #  #  #  #  #  #"]
+
+	monster_parts = []
+	for y, line in enumerate(monster):
+		for x, char in enumerate(line):
+			if char == "#":
+				monster_parts.append((x, y))
+
+	while not FindMonsters(image, monster_parts):
+		RotateImage(image)
+
+	answer = 0
+	for line in image:
+		for c in line:
+			answer = answer + (1 if c == "#" else 0)
+	"""
+	for iline in image:
+		for c in iline:
+			print(c, end = "")
+		print("")
+	"""
+
 	ShowAnswer(answer)
 
 #########################################
 #########################################
 
-def PartB():
-	StartPartB()
-	TestDataB()
-
-	ShowAnswer("?")
-
-#########################################
-#########################################
-
 def Main():
+	if with_fancy_display:
+		print(ClearScreen, end = "")
+		print(MoveCursor(1, 1), end = "")
 	StartDay(20)
 	ReadInput()
 	PartA()
