@@ -37,16 +37,26 @@ def ShowNumbers(numbers, current):
 		print(f"{num}{Reset} ", end = "")
 	print("")
 
+def ShowNumbersEx(numbers, current):
+	for num in numbers:
+		if num == current:
+			print(f"({num}) ", end = "")
+		else:
+			print(f"{num} ", end = "")
+	print("")
+
 def Play(numberss, turns: int):
 	numbers = []
 	for i in numberss:
 		numbers.append(i)
 
 	hist = {}
+	last_n1 = 0
+	last_n2 = 0
 
 	current = numbers[0]
 	for i in range(turns):
-		print(f"{i}", end = "\r")
+		#print(f"{i}", end = "\r")
 		# ShowNumbers(numbers, current)
 		c1 = RemoveCW(numbers, current)
 		c2 = RemoveCW(numbers, current)
@@ -75,9 +85,20 @@ def Play(numberss, turns: int):
 			deze = (numbers[ix1 + 1], numbers[ix1 + 2])
 			if deze in hist:
 				hist[deze] += 1
-				print(deze, hist[deze])
+				# print(deze, hist[deze])
 			else:
 				hist[deze] = 1
+
+		if True: # (i + 1) % 1000 == 0:
+			ix1 = numbers.index(1)
+			if ix1 < len(numbers) - 2:
+				n1 = numbers[ix1 + 1]
+				n2 = numbers[ix1 + 2]
+				if n1 != last_n1 or n2 != last_n2:
+					print(i + 1, ix1, numbers[ix1 + 1], numbers[ix1 + 2])
+					last_n1 = n1
+					last_n2 = n2
+	#ShowNumbersEx(numbers, current)
 
 
 	answerA = ""
@@ -110,9 +131,9 @@ def PartB():
 
 	numbers = [int(c) for c in inputdata[0]]
 	m = max(numbers) + 1
-	for num in range(m, 1_000_000 + 1):
+	for num in range(m, 1_000_000 + 1):			# 1_000_000
 		numbers.append(num)
-	_, answer, = Play(numbers, 10_000_000)
+	_, answer, = Play(numbers, 1_000)   # 10_000_000
 	ShowAnswer(answer)
 
 #########################################

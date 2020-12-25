@@ -511,12 +511,13 @@ class Solver():
 		if with_fancy_display:
 			self.InitFancyDisplay()
 
+		initial_tile = 2	# The tile to start from (0 - 143)
 		cx = self.squaresize // 2 + 1
 		cy = self.squaresize // 2 + 1
 		x, y = self.path[0]
 		pathpos = 1
 		done = False
-		item = Item(x, y, 4)
+		item = Item(x, y, initial_tile)
 		self.tiles[item.tileindex].used = True
 		self.picture[y + cy][x + cx] = item
 		self.stack.append(item)
@@ -643,13 +644,6 @@ def PartB():
 
 	image = solver.BuildImageForPartB()
 
-	"""
-	for iline in image:
-		for c in iline:
-			print(c, end = "")
-		print("")
-	"""
-
 	monster = ["                  #",
 			   "#    ##    ##    ###",
 			   " #  #  #  #  #  #"]
@@ -660,19 +654,18 @@ def PartB():
 			if char == "#":
 				monster_parts.append((x, y))
 
+	r = 0
 	while not FindMonsters(image, monster_parts):
 		RotateImage(image)
+		r += 1
+		if r > 3:
+			print(f"{BrightRed}No monsters found. Change the value of 'initial_tile' and try again.{Reset}")
+			break
 
 	answer = 0
 	for line in image:
 		for c in line:
 			answer = answer + (1 if c == "#" else 0)
-	"""
-	for iline in image:
-		for c in iline:
-			print(c, end = "")
-		print("")
-	"""
 
 	ShowAnswer(answer)
 
