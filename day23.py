@@ -19,15 +19,29 @@ def TestData():
 #########################################
 #########################################
 
+def Remove3CW(numbers, current):
+	pos = numbers.index(current) + 1
+	if pos < len(numbers) - 3:
+		c1 = numbers[pos]
+		c2 = numbers[pos + 1]
+		c3 = numbers[pos + 2]
+		numbers = numbers[:pos] + numbers[pos + 3:]
+	else:	
+		c1 = RemoveCW(numbers, current)
+		c2 = RemoveCW(numbers, current)
+		c3 = RemoveCW(numbers, current)
+	
+	return (c1, c2, c3)
+
 def RemoveCW(numbers, current):
 	pos = numbers.index(current) + 1
 	if pos < len(numbers):
 		num = numbers[pos]
-		numbers.remove(num)
+		numbers.pop(pos)
 		return num
 	else:
 		num = numbers[0]
-		numbers.remove(num)
+		numbers.pop(0)
 		return num
 
 def ShowNumbers(numbers, current):
@@ -45,19 +59,15 @@ def ShowNumbersEx(numbers, current):
 			print(f"{num} ", end = "")
 	print("")
 
-def Play(numberss, turns: int):
-	numbers = []
-	for i in numberss:
-		numbers.append(i)
-
-	hist = {}
+def Play(numbers, turns: int):
 	last_n1 = 0
 	last_n2 = 0
-
+	fullen = len(numbers)
 	current = numbers[0]
 	for i in range(turns):
 		#print(f"{i}", end = "\r")
 		# ShowNumbers(numbers, current)
+		#c1, c2, c3 = Remove3CW(numbers, current)
 		c1 = RemoveCW(numbers, current)
 		c2 = RemoveCW(numbers, current)
 		c3 = RemoveCW(numbers, current)
@@ -70,36 +80,27 @@ def Play(numberss, turns: int):
 				dest = max(numbers)
 		destix = numbers.index(dest)
 		# print(f"Target: {dest} {destix}")
-		numbers.insert(destix + 1, c3)
-		numbers.insert(destix + 1, c2)
-		numbers.insert(destix + 1, c1)
+		newnumbers = numbers[:destix + 1]
+		newnumbers.extend([c1, c2, c3])
+		newnumbers.extend(numbers[destix + 1:])
+		numbers = newnumbers
 		cix = numbers.index(current)
-		cix = (cix + 1) % len(numbers)
+		cix = (cix + 1) % fullen
 		current = numbers[cix]
 		# ShowNumbers(numbers, current)
 		# qq = input()
 		# print("")
-
-		ix1 = numbers.index(1)
-		if ix1 < len(numbers) - 2:
-			deze = (numbers[ix1 + 1], numbers[ix1 + 2])
-			if deze in hist:
-				hist[deze] += 1
-				# print(deze, hist[deze])
-			else:
-				hist[deze] = 1
-
-		if True: # (i + 1) % 1000 == 0:
+		if True: #(i + 1) % 1000 == 0:
 			ix1 = numbers.index(1)
-			if ix1 < len(numbers) - 2:
+			if ix1 < fullen - 2:
 				n1 = numbers[ix1 + 1]
 				n2 = numbers[ix1 + 2]
 				if n1 != last_n1 or n2 != last_n2:
-					print(i + 1, ix1, numbers[ix1 + 1], numbers[ix1 + 2])
+					print(f"Turn {i + 1} Index of 1 = {ix1} Numbers: {n1} and {n2}")
 					last_n1 = n1
 					last_n2 = n2
-	#ShowNumbersEx(numbers, current)
 
+	#ShowNumbersEx(numbers, current)
 
 	answerA = ""
 	ix = numbers.index(1) + 1
@@ -131,9 +132,9 @@ def PartB():
 
 	numbers = [int(c) for c in inputdata[0]]
 	m = max(numbers) + 1
-	for num in range(m, 1_000_000 + 1):			# 1_000_000
+	for num in range(m, 1_000 + 1):			# 1_000_000
 		numbers.append(num)
-	_, answer, = Play(numbers, 1_000)   # 10_000_000
+	_, answer, = Play(numbers, 10_000)   # 10_000_000
 	ShowAnswer(answer)
 
 #########################################
